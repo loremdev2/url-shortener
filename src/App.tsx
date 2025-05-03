@@ -1,18 +1,37 @@
+import { createBrowserRouter, RouterProvider } from 'react-router-dom'
 import './App.css'
-import { Button } from './components/ui/button'
+import LandingPage from '../pages/landing.tsx';
+import AppLayout from '../layout/app-layout.tsx';
+import DashBoard from '../pages/dashboard.tsx';
+import Auth from '../pages/auth.tsx';
+import Link from '../pages/redirect-link.tsx';
+const router= createBrowserRouter([
+  {
+    element: <AppLayout />,
+    children: [
+      {
+        path: "/",
+        element: <LandingPage />,
+      },
+      {
+        path: "/dashboard",
+        element: <DashBoard />,
+      },
+      {
+        path: "/auth",
+        element: <Auth />,
+      },
+      {
+        path: "/link/:id",
+        element: <Link />,
+      },
+    ]
+  }
+])
 
 function App() {
 
-  return (
-    <>
-    <div className='flex flex-col items-center'>
-      <h1>Hello World</h1>
-    </div>
-      <Button variant="default" size="lg">
-        Button-1
-      </Button>
-    </>
-  )
+  return <RouterProvider router={router} />
 }
 
 export default App
