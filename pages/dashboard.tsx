@@ -1,5 +1,5 @@
 
-// src/components/Dashboard.tsx (updated to use LinkCard)
+// src/components/Dashboard.tsx (unchanged)
 import { useState, useEffect, useContext } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarLoader } from "react-spinners";
@@ -41,18 +41,14 @@ const Dashboard: React.FC = () => {
     getClicksForUrls
   );
 
-  // Fetch URLs and clicks
   useEffect(() => {
     if (user?.id) fetchUrls(user.id);
   }, [user?.id]);
 
   useEffect(() => {
-    if (urlsData?.length) {
-      fetchClicks(urlsData.map((u) => u.id));
-    }
+    if (urlsData?.length) fetchClicks(urlsData.map((u) => u.id));
   }, [urlsData]);
 
-  // Update stats
   useEffect(() => {
     setStats({
       linksCreated: urlsData?.length ?? 0,
@@ -75,14 +71,12 @@ const Dashboard: React.FC = () => {
         Dashboard Overview
       </h2>
 
-      {/* Loader Overlay */}
       {isLoading && (
         <div className="fixed inset-0 bg-white bg-opacity-75 flex items-center justify-center z-50">
           <BarLoader width={200} />
         </div>
       )}
 
-      {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
         <Card className="border-blue-300 hover:shadow-xl transition-shadow duration-200">
           <CardHeader className="flex items-center space-x-2">
@@ -109,7 +103,6 @@ const Dashboard: React.FC = () => {
         </Card>
       </div>
 
-      {/* Links Section */}
       <div className="mb-8">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-2xl font-semibold">My Links</h3>
@@ -127,7 +120,7 @@ const Dashboard: React.FC = () => {
         />
 
         {filteredUrls.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {filteredUrls.map((link) => {
               const clickCount =
                 clicksData?.filter((c) => c.url_id === link.id).length || 0;
@@ -150,7 +143,6 @@ const Dashboard: React.FC = () => {
         )}
       </div>
 
-      {/* Error */}
       {error && <Error message={String(error.message)} />}
     </div>
   );
