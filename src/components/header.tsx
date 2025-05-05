@@ -3,11 +3,12 @@ import { Button } from './ui/button'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from './ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { LinkIcon, LogOut } from 'lucide-react';
+import { UrlState } from '@/context/UrlContext';
 
 const Header = () => {
     const navigate = useNavigate()
+  const { user } = UrlState();
 
-    const user = false;
 
     return (
         <nav className="flex items-center justify-between px-4 py-3 border-b">
@@ -27,11 +28,11 @@ const Header = () => {
 
                     <DropdownMenu>
                         <DropdownMenuTrigger><Avatar>
-                            <AvatarImage src="https://github.com/shadcn.png" />
+                            <AvatarImage src={user.user_metadata.profile_pic}/>
                             <AvatarFallback>CN</AvatarFallback>
                         </Avatar></DropdownMenuTrigger>
                         <DropdownMenuContent>
-                            <DropdownMenuLabel>Lorem Dev</DropdownMenuLabel>
+                            <DropdownMenuLabel>{user?.user_metadata?.username}</DropdownMenuLabel>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem>
                                 <LinkIcon className='mr-2 h-4'/>    My Links
@@ -41,8 +42,6 @@ const Header = () => {
                             </DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
-
-
             }
         </nav>
     )
