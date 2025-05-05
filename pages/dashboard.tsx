@@ -1,14 +1,17 @@
-// src/components/Dashboard.tsx
+
+// src/components/Dashboard.tsx (updated to use LinkCard)
 import { useState, useEffect, useContext } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarLoader } from "react-spinners";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Link as LinkIcon, Copy } from "lucide-react";
 import Error from "@/components/error";
 import useFetch from "@/hooks/useFetch";
 import { getUrls } from "@/db/apiUrls";
 import { UrlContext } from "@/context/UrlContext";
 import { getClicksForUrls } from "@/db/clickApi";
+import LinkCard from "@/components/link-card";
 
 interface Url {
   id: string;
@@ -16,13 +19,7 @@ interface Url {
   short_url: string;
 }
 
-interface Click {
-  id: string;
-  url_id: string;
-  timestamp: string;
-}
-
-const Dashboard: React.FunctionComponent = () => {
+const Dashboard: React.FC = () => {
   const [filter, setFilter] = useState("");
   const [stats, setStats] = useState({ linksCreated: 0, totalClicks: 0 });
 
@@ -31,30 +28,31 @@ const Dashboard: React.FunctionComponent = () => {
   const {
     data: urlsData,
     loading: loadingUrls,
-    error: fetchUrlsError,    // now an Error | null
+    error: fetchUrlsError,
     fn: fetchUrls,
   } = useFetch<Url[], [string]>(getUrls);
 
   const {
     data: clicksData,
     loading: loadingClicks,
-    error: fetchClicksError,  // now an Error | null
+    error: fetchClicksError,
     fn: fetchClicks,
-  } = useFetch<Click[], [string[]]>(getClicksForUrls);
+  } = useFetch<{ id: string; url_id: string; timestamp: string }[], [string[]]>(
+    getClicksForUrls
+  );
 
-  // 1) fetch URLs on mount
+  // Fetch URLs and clicks
   useEffect(() => {
     if (user?.id) fetchUrls(user.id);
   }, [user?.id]);
 
-  // 2) when URLs arrive, fetch clicks
   useEffect(() => {
     if (urlsData?.length) {
       fetchClicks(urlsData.map((u) => u.id));
     }
   }, [urlsData]);
 
-  // 3) compute stats
+  // Update stats
   useEffect(() => {
     setStats({
       linksCreated: urlsData?.length ?? 0,
@@ -68,49 +66,56 @@ const Dashboard: React.FunctionComponent = () => {
   );
 
   const isLoading = loadingUrls || loadingClicks;
-  // error is either Error or null
-  const error: Error | null = (fetchUrlsError as Error | null) || (fetchClicksError as Error | null);
+  const error: Error | null =
+    (fetchUrlsError as Error | null) || (fetchClicksError as Error | null);
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
-      <h2 className="text-2xl font-bold mb-6 text-center">
+    <div className="max-w-5xl mx-auto p-8">
+      <h2 className="text-3xl font-extrabold mb-8 text-center">
         Dashboard Overview
       </h2>
 
-      {/* Loader */}
+      {/* Loader Overlay */}
       {isLoading && (
-        <div className="mb-8">
-          <BarLoader width="100%" />
+        <div className="fixed inset-0 bg-white bg-opacity-75 flex items-center justify-center z-50">
+          <BarLoader width={200} />
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
-        <Card className="hover:shadow-lg transition-shadow duration-200">
-          <CardHeader>
+      {/* Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
+        <Card className="border-blue-300 hover:shadow-xl transition-shadow duration-200">
+          <CardHeader className="flex items-center space-x-2">
+            <LinkIcon size={20} className="text-blue-600" />
             <CardTitle className="text-lg">Links Created</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-semibold text-center">
+            <p className="text-4xl font-bold text-center text-blue-700">
               {stats.linksCreated}
             </p>
           </CardContent>
         </Card>
 
-        <Card className="hover:shadow-lg transition-shadow duration-200">
-          <CardHeader>
+        <Card className="border-green-300 hover:shadow-xl transition-shadow duration-200">
+          <CardHeader className="flex items-center space-x-2">
+            <Copy size={20} className="text-green-600 rotate-90" />
             <CardTitle className="text-lg">Total Clicks</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-semibold text-center">
+            <p className="text-4xl font-bold text-center text-green-700">
               {stats.totalClicks}
             </p>
           </CardContent>
         </Card>
       </div>
-      <div>
+
+      {/* Links Section */}
+      <div className="mb-8">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-xl font-semibold">My Links</h3>
-          <Button className="px-4 py-2">Create Link</Button>
+          <h3 className="text-2xl font-semibold">My Links</h3>
+          <Button className="px-6 py-2">
+            Create Link
+          </Button>
         </div>
 
         <Input
@@ -118,23 +123,26 @@ const Dashboard: React.FunctionComponent = () => {
           placeholder="Search links..."
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
-          className="mb-4"
+          className="mb-6"
         />
 
         {filteredUrls.length > 0 ? (
-          filteredUrls.map((link) => (
-            <Card
-              key={link.id}
-              className="hover:shadow-md transition-shadow duration-200 mb-2"
-            >
-              <CardContent>
-                <p className="text-center font-medium">{link.title}</p>
-                <p className="text-center text-sm text-blue-500">{link?.short_url}</p>
-              </CardContent>
-            </Card>
-          ))
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredUrls.map((link) => {
+              const clickCount =
+                clicksData?.filter((c) => c.url_id === link.id).length || 0;
+              return (
+                <LinkCard
+                  key={link.id}
+                  title={link.title}
+                  shortUrl={link.short_url}
+                  clickCount={clickCount}
+                />
+              );
+            })}
+          </div>
         ) : (
-          <Card className="hover:shadow-md transition-shadow duration-200">
+          <Card className="opacity-80">
             <CardContent>
               <p className="text-center text-gray-500">No links found</p>
             </CardContent>
