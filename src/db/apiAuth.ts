@@ -36,22 +36,28 @@ export async function getCurrentUser(): Promise<User | null> {
 }
 
 
-export async function signUp({username, email, password, profile_pic}: any){
-    const fileName= `dp-${username.split(" ").join("-")}-${Math.random()}`;
-    const {error: storageError}= await supabase
-                                         .storage
-                                         .from("profile-pic").upload(fileName, profile_pic);
-    if(storageError) throw new Error(storageError.message);
-    const {data, error} = await supabase.auth.signUp({
+export async function signUp({ username, email, password, profile_pic }: any) {
+    const fileName = `dp-${username.split(" ").join("-")}-${Math.random()}`;
+    const { error: storageError } = await supabase
+        .storage
+        .from("profile-pic").upload(fileName, profile_pic);
+    if (storageError) throw new Error(storageError.message);
+    const { data, error } = await supabase.auth.signUp({
         email,
         password,
-        options:{
+        options: {
             data: {
                 username,
                 profile_pic: `${supabaseUrl}/storage/v1/object/public/profile-pic/${fileName}`
             }
         }
     })
-    if(error) throw new Error(error.message);
+    if (error) throw new Error(error.message);
     return data;
+}
+
+
+export async function logout() {
+    const { error } = await supabase.auth.signOut();
+    if (error) throw new Error(error.message);
 }
