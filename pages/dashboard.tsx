@@ -1,5 +1,4 @@
-
-// src/components/Dashboard.tsx (unchanged)
+// src/components/Dashboard.tsx
 import { useState, useEffect, useContext } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarLoader } from "react-spinners";
@@ -13,25 +12,38 @@ import { UrlContext } from "@/context/UrlContext";
 import { getClicksForUrls } from "@/db/clickApi";
 import LinkCard from "@/components/link-card";
 
+// Raw API response including user_id and created_at
+interface RawUrl {
+  id: string;
+  title: string;
+  short_url: string;
+  user_id: string;
+  created_at: string;
+}
+
+// Simplified URL type for UI
 interface Url {
   id: string;
   title: string;
   short_url: string;
+  created_at: string;
 }
 
 const Dashboard: React.FC = () => {
   const [filter, setFilter] = useState("");
   const [stats, setStats] = useState({ linksCreated: 0, totalClicks: 0 });
-
   const { user } = useContext(UrlContext);
 
+  // Fetch raw URLs
   const {
-    data: urlsData,
+    data: rawUrlsData,
     loading: loadingUrls,
     error: fetchUrlsError,
     fn: fetchUrls,
-  } = useFetch<Url[], [string]>(getUrls);
+    // @ts-ignore
+  } = useFetch<RawUrl[], [string]>(getUrls);
 
+  // Fetch clicks
   const {
     data: clicksData,
     loading: loadingClicks,
@@ -41,22 +53,30 @@ const Dashboard: React.FC = () => {
     getClicksForUrls
   );
 
+  // Trigger fetch URLs when user ID available
   useEffect(() => {
     if (user?.id) fetchUrls(user.id);
   }, [user?.id]);
 
+  // Trigger fetch clicks when URLs loaded
   useEffect(() => {
-    if (urlsData?.length) fetchClicks(urlsData.map((u) => u.id));
-  }, [urlsData]);
+    if (rawUrlsData?.length) fetchClicks(rawUrlsData.map((u) => u.id));
+  }, [rawUrlsData]);
 
+  // Compute stats
   useEffect(() => {
     setStats({
-      linksCreated: urlsData?.length ?? 0,
+      linksCreated: rawUrlsData?.length ?? 0,
       totalClicks: clicksData?.length ?? 0,
     });
-  }, [urlsData, clicksData]);
+  }, [rawUrlsData, clicksData]);
 
-  const urls = urlsData ?? [];
+  // Map raw data to UI URLs
+  const urls: Url[] = rawUrlsData
+    ? rawUrlsData.map(({ id, title, short_url, created_at }) => ({ id, title, short_url, created_at }))
+    : [];
+
+  // Apply filter
   const filteredUrls = urls.filter((u) =>
     u.title.toLowerCase().includes(filter.toLowerCase())
   );
@@ -106,9 +126,7 @@ const Dashboard: React.FC = () => {
       <div className="mb-8">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-2xl font-semibold">My Links</h3>
-          <Button className="px-6 py-2">
-            Create Link
-          </Button>
+          <Button className="px-6 py-2">Create Link</Button>
         </div>
 
         <Input
@@ -123,13 +141,14 @@ const Dashboard: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {filteredUrls.map((link) => {
               const clickCount =
-                clicksData?.filter((c) => c.url_id === link.id).length || 0;
+                clicksData?.filter((c) => c.url_id === link.id).length ?? 0;
               return (
                 <LinkCard
                   key={link.id}
                   title={link.title}
                   shortUrl={link.short_url}
                   clickCount={clickCount}
+                  createdAt={link.created_at}
                 />
               );
             })}
